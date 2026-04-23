@@ -7,8 +7,7 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const theme = savedTheme ? savedTheme === 'dark' : prefersDark
+    const theme = savedTheme ? savedTheme === 'dark' : true
     setIsDark(theme)
     if (theme) {
       document.documentElement.classList.add('dark')
