@@ -16,11 +16,13 @@ tablesRouter.get(
         .enum(["available", "seated", "billed", "cleaning"])
         .optional()
         .safeParse(req.query.status);
+        console.log(status)
 
       const filter = {};
       if (status.success && status.data) filter.status = status.data;
+      console.log(filter)
 
-      const tables = await Table.find(filter)
+      const tables = await Table.find()
         .sort({ code: 1 })
         .limit(200)
         .lean();

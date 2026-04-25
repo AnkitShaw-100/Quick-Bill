@@ -6,19 +6,14 @@ import { z } from "zod";
 dotenv.config();
 
 const EnvSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
 
   CORS_ORIGINS: z
     .string()
     .default("http://localhost:5173")
     .transform((val) =>
-      val
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      val.split(",").map((s) => s.trim()).filter(Boolean),
     ),
 
   MONGODB_URI: z.string().min(1),
@@ -35,28 +30,18 @@ const EnvSchema = z.object({
 
 const parsed = EnvSchema.safeParse(process.env);
 if (!parsed.success) {
-  // eslint-disable-next-line no-console
-  console.error(
-    "Invalid environment variables:",
-    parsed.error.flatten().fieldErrors,
-  );
+  console.error("Invalid environment variables:", parsed.error.flatten().fieldErrors);
   throw new Error("Invalid environment variables");
 }
 
 const env = parsed.data;
 
-async function main() {
-  await connectDb(env);
-  const app = createApp(env);
+let app;
 
-  app.listen(env.PORT, () => {
-    // eslint-disable-next-line no-console
-    console.log(`API listening on http://localhost:${env.PORT}`);
-  });
+export default async function handler(req, res) {
+  if (!app) {
+    await connectDb(env);
+    app = createApp(env);
+  }
+  return app(req, res);
 }
-
-main().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error(err);
-  process.exit(1);
-});
