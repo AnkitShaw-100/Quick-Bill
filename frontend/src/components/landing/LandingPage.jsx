@@ -75,7 +75,7 @@ const Hero = () => (
         <h1 className="mt-6 font-display text-5xl font-bold leading-[1.05] text-foreground md:text-6xl lg:text-7xl">
           The flow your{" "}
           <span className="relative inline-block">
-            <span className="absolute inset-x-0 bottom-2 -z-0 h-3 rounded-full bg-highlight/80" />
+            <span className="absolute inset-x-0 bottom-2 z-0 h-3 rounded-full bg-highlight/80" />
             <span className="relative italic">restaurant</span>
           </span>
           <br /> has been waiting for.
@@ -127,7 +127,7 @@ const Hero = () => (
           <img
             src={heroImage}
             alt="Dine Flow restaurant POS in use on a beautifully set table"
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover mx-auto my-auto"
           />
         </div>
         <motion.div
@@ -246,7 +246,7 @@ const HowItWorks = () => (
             "Close the night with one-click reports and payouts",
           ].map((line) => (
             <div key={line} className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-highlight" />
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-highlight" />
               <p className="text-primary-foreground/90">{line}</p>
             </div>
           ))}

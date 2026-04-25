@@ -18,4 +18,3 @@ const UserSchema = new Schema(
 );
 
 export const User = mongoose.models.User ?? mongoose.model("User", UserSchema);
-

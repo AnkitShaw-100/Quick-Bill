@@ -14,4 +14,3 @@ v1Router.use(tablesRouter);
 v1Router.use(menuItemsRouter);
 v1Router.use(categoriesRouter);
 v1Router.use(dashboardRouter);
-

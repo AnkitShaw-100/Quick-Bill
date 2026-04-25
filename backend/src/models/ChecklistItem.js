@@ -14,4 +14,3 @@ ChecklistItemSchema.index({ clerkUserId: 1, createdAt: -1 });
 export const ChecklistItem =
   mongoose.models.ChecklistItem ??
   mongoose.model("ChecklistItem", ChecklistItemSchema);
-

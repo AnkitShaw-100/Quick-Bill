@@ -24,13 +24,23 @@ dashboardRouter.get(
       const clerkUserId = getClerkUserId(req);
       const page = Math.max(
         1,
-        z.coerce.number().int().positive().optional().parse(req.query.page ?? 1),
+        z.coerce
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .parse(req.query.page ?? 1),
       );
       const limit = Math.min(
         20,
         Math.max(
           1,
-          z.coerce.number().int().positive().optional().parse(req.query.limit ?? 5),
+          z.coerce
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .parse(req.query.limit ?? 5),
         ),
       );
 
@@ -39,46 +49,53 @@ dashboardRouter.get(
       const end = new Date(start);
       end.setDate(end.getDate() + 1);
 
-      const [todayRevenueAgg, openOrders, totalTables, occupiedTables, avgTicketAgg] =
-        await Promise.all([
-          Order.aggregate([
-            {
-              $match: {
-                createdByClerkUserId: clerkUserId,
-                createdAt: { $gte: start, $lt: end },
-                paymentStatus: "paid",
-              },
+      const [
+        todayRevenueAgg,
+        openOrders,
+        totalTables,
+        occupiedTables,
+        avgTicketAgg,
+      ] = await Promise.all([
+        Order.aggregate([
+          {
+            $match: {
+              createdByClerkUserId: clerkUserId,
+              createdAt: { $gte: start, $lt: end },
+              paymentStatus: "paid",
             },
-            { $group: { _id: null, total: { $sum: "$subtotal" } } },
-          ]),
-          Order.countDocuments({
-            createdByClerkUserId: clerkUserId,
-            status: { $nin: ["Paid", "Cancelled"] },
-          }),
-          Table.countDocuments(),
-          Table.countDocuments({ status: { $in: ["seated", "billed"] } }),
-          Order.aggregate([
-            {
-              $match: {
-                createdByClerkUserId: clerkUserId,
-                createdAt: { $gte: start, $lt: end },
-              },
+          },
+          { $group: { _id: null, total: { $sum: "$subtotal" } } },
+        ]),
+        Order.countDocuments({
+          createdByClerkUserId: clerkUserId,
+          status: { $nin: ["Paid", "Cancelled"] },
+        }),
+        Table.countDocuments(),
+        Table.countDocuments({ status: { $in: ["seated", "billed"] } }),
+        Order.aggregate([
+          {
+            $match: {
+              createdByClerkUserId: clerkUserId,
+              createdAt: { $gte: start, $lt: end },
             },
-            {
-              $group: {
-                _id: null,
-                total: { $sum: "$subtotal" },
-                count: { $sum: 1 },
-              },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$subtotal" },
+              count: { $sum: 1 },
             },
-          ]),
-        ]);
+          },
+        ]),
+      ]);
 
       const recentOrdersTotal = await Order.countDocuments({
         createdByClerkUserId: clerkUserId,
       });
 
-      const recentOrders = await Order.find({ createdByClerkUserId: clerkUserId })
+      const recentOrders = await Order.find({
+        createdByClerkUserId: clerkUserId,
+      })
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -145,7 +162,11 @@ dashboardRouter.post(
         done: false,
       });
       res.status(201).json({
-        item: { id: String(created._id), title: created.title, done: created.done },
+        item: {
+          id: String(created._id),
+          title: created.title,
+          done: created.done,
+        },
       });
     } catch (err) {
       next(err);
@@ -167,13 +188,17 @@ dashboardRouter.patch(
         { new: true },
       ).lean();
 
-      if (!updated) return res.status(404).json({ error: { message: "Not found" } });
+      if (!updated)
+        return res.status(404).json({ error: { message: "Not found" } });
       res.json({
-        item: { id: String(updated._id), title: updated.title, done: updated.done },
+        item: {
+          id: String(updated._id),
+          title: updated.title,
+          done: updated.done,
+        },
       });
     } catch (err) {
       next(err);
     }
   },
 );
-

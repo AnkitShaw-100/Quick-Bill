@@ -16,4 +16,3 @@ CategorySchema.index(
 
 export const Category =
   mongoose.models.Category ?? mongoose.model("Category", CategorySchema);
-

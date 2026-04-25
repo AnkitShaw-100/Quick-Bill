@@ -10,25 +10,25 @@ const statusMeta = {
     label: "Available",
     bg: "bg-card",
     ring: "ring-border",
-    dot: "bg-muted-foreground/60",
+    dot: "bg-mint",
   },
   seated: {
     label: "Seated",
-    bg: "bg-card",
-    ring: "ring-border",
-    dot: "bg-muted-foreground/60",
+    bg: "bg-primary text-primary-foreground",
+    ring: "ring-primary",
+    dot: "bg-highlight",
   },
   billed: {
     label: "Billed",
-    bg: "bg-card",
-    ring: "ring-border",
-    dot: "bg-muted-foreground/60",
+    bg: "bg-highlight text-highlight-foreground",
+    ring: "ring-highlight",
+    dot: "bg-primary",
   },
   cleaning: {
     label: "Cleaning",
-    bg: "bg-card",
+    bg: "bg-muted text-muted-foreground",
     ring: "ring-border",
-    dot: "bg-muted-foreground/60",
+    dot: "bg-terracotta",
   },
 };
 
@@ -125,8 +125,9 @@ export default function TablesPage() {
             const mins = duration ? Math.floor(duration / 60000) : 0;
             const hrs = duration ? Math.floor(mins / 60) : 0;
             const minPart = duration ? mins % 60 : 0;
-            const durationLabel =
-              duration ? `${hrs}:${String(minPart).padStart(2, "0")}` : null;
+            const durationLabel = duration
+              ? `${hrs}:${String(minPart).padStart(2, "0")}`
+              : null;
 
             return (
               <button

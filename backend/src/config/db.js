@@ -7,4 +7,3 @@ export async function connectDb(env) {
     autoIndex: env.NODE_ENV !== "production",
   });
 }
-

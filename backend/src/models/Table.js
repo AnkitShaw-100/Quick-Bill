@@ -21,4 +21,3 @@ TableSchema.index({ restaurantId: 1, code: 1 }, { unique: true, sparse: true });
 
 export const Table =
   mongoose.models.Table ?? mongoose.model("Table", TableSchema);
-

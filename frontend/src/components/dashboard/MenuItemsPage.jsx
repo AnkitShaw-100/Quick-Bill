@@ -101,7 +101,9 @@ export default function MenuItemsPage() {
           </div>
         )}
         {!loading && error && (
-          <div className="py-10 text-center text-sm text-destructive">{error}</div>
+          <div className="py-10 text-center text-sm text-destructive">
+            {error}
+          </div>
         )}
 
         {!loading && !error && (
@@ -136,7 +138,9 @@ export default function MenuItemsPage() {
       {createOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-card">
-            <h2 className="font-display text-xl font-semibold">Add menu item</h2>
+            <h2 className="font-display text-xl font-semibold">
+              Add menu item
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Enter item name, category and price.
             </p>
@@ -215,4 +219,3 @@ export default function MenuItemsPage() {
     </div>
   );
 }
-

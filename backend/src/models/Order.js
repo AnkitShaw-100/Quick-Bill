@@ -47,4 +47,3 @@ OrderSchema.index(
 
 export const Order =
   mongoose.models.Order ?? mongoose.model("Order", OrderSchema);
-

@@ -49,7 +49,7 @@ export function AppSidebar() {
             <Utensils className="h-4 w-4" />
           </span>
           {!collapsed && (
-            <span className="font-display text-lg font-bold text-sidebar-foreground">
+            <span className="font-display text-lg font-bold text-sidebar-background">
               Dine Flow
             </span>
           )}

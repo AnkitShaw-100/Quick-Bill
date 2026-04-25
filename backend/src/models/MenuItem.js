@@ -18,4 +18,3 @@ MenuItemSchema.index(
 
 export const MenuItem =
   mongoose.models.MenuItem ?? mongoose.model("MenuItem", MenuItemSchema);
-

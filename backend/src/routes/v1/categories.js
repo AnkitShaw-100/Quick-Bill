@@ -54,4 +54,3 @@ categoriesRouter.post(
     }
   },
 );
-

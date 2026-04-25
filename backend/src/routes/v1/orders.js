@@ -19,72 +19,83 @@ ordersRouter.get(
   requireAuthApi(),
   ensureDbUser(),
   async (req, res, next) => {
-  try {
-    const page = Math.max(
-      1,
-      z.coerce.number().int().positive().optional().parse(req.query.page ?? 1),
-    );
-    const limit = Math.min(
-      100,
-      Math.max(
+    try {
+      const page = Math.max(
         1,
-        z.coerce.number().int().positive().optional().parse(req.query.limit ?? 8),
-      ),
-    );
+        z.coerce
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .parse(req.query.page ?? 1),
+      );
+      const limit = Math.min(
+        100,
+        Math.max(
+          1,
+          z.coerce
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .parse(req.query.limit ?? 8),
+        ),
+      );
 
-    const status = z
-      .enum(["New", "In kitchen", "Served", "Paid", "Cancelled"])
-      .optional()
-      .safeParse(req.query.status);
+      const status = z
+        .enum(["New", "In kitchen", "Served", "Paid", "Cancelled"])
+        .optional()
+        .safeParse(req.query.status);
 
-    const q = z.string().trim().optional().safeParse(req.query.q);
+      const q = z.string().trim().optional().safeParse(req.query.q);
 
-    const filter = {};
-    if (status.success && status.data) filter.status = status.data;
+      const filter = {};
+      if (status.success && status.data) filter.status = status.data;
 
-    if (q.success && q.data) {
-      const query = q.data;
-      const queryNum = Number(query);
-      filter.$or = [
-        { tableCode: { $regex: query, $options: "i" } },
-        ...(Number.isFinite(queryNum) ? [{ orderNo: queryNum }] : []),
-      ];
+      if (q.success && q.data) {
+        const query = q.data;
+        const queryNum = Number(query);
+        filter.$or = [
+          { tableCode: { $regex: query, $options: "i" } },
+          ...(Number.isFinite(queryNum) ? [{ orderNo: queryNum }] : []),
+        ];
+      }
+
+      const total = await Order.countDocuments(filter);
+
+      const orders = await Order.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+
+      res.json({
+        orders: orders.map((o) => ({
+          orderId: String(o._id),
+          id: `#${o.orderNo}`,
+          table: o.tableCode,
+          items: (o.items ?? []).reduce((acc, it) => acc + it.qty, 0),
+          total: o.subtotal,
+          status: o.status,
+          paymentStatus: o.paymentStatus ?? "unpaid",
+          statusUpdatedAt: o.statusUpdatedAt ?? o.updatedAt ?? o.createdAt,
+          paymentStatusUpdatedAt:
+            o.paymentStatusUpdatedAt ?? o.updatedAt ?? o.createdAt,
+          server: o.serverName ?? "—",
+          time: o.createdAt,
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / limit)),
+        },
+      });
+    } catch (err) {
+      next(err);
     }
-
-    const total = await Order.countDocuments(filter);
-
-    const orders = await Order.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
-
-    res.json({
-      orders: orders.map((o) => ({
-        orderId: String(o._id),
-        id: `#${o.orderNo}`,
-        table: o.tableCode,
-        items: (o.items ?? []).reduce((acc, it) => acc + it.qty, 0),
-        total: o.subtotal,
-        status: o.status,
-        paymentStatus: o.paymentStatus ?? "unpaid",
-        statusUpdatedAt: o.statusUpdatedAt ?? o.updatedAt ?? o.createdAt,
-        paymentStatusUpdatedAt:
-          o.paymentStatusUpdatedAt ?? o.updatedAt ?? o.createdAt,
-        server: o.serverName ?? "—",
-        time: o.createdAt,
-      })),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / limit)),
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 const CreateOrderSchema = z.object({
   tableCode: z.string().min(1),
@@ -102,7 +113,9 @@ const CreateOrderSchema = z.object({
     .enum(["New", "In kitchen", "Served", "Paid", "Cancelled"])
     .optional()
     .default("New"),
-  paymentStatus: z.enum(["unpaid", "pending", "paid", "failed"]).default("unpaid"),
+  paymentStatus: z
+    .enum(["unpaid", "pending", "paid", "failed"])
+    .default("unpaid"),
 });
 
 ordersRouter.post(
@@ -110,47 +123,48 @@ ordersRouter.post(
   requireAuthApi(),
   ensureDbUser(),
   async (req, res, next) => {
-  try {
-    const parsed = CreateOrderSchema.parse(req.body);
-    const subtotal = parsed.items.reduce(
-      (acc, it) => acc + it.qty * it.price,
-      0,
-    );
+    try {
+      const parsed = CreateOrderSchema.parse(req.body);
+      const subtotal = parsed.items.reduce(
+        (acc, it) => acc + it.qty * it.price,
+        0,
+      );
 
-    const last = await Order.findOne()
-      .sort({ orderNo: -1 })
-      .select({ orderNo: 1 })
-      .lean();
-    const nextOrderNo = (last?.orderNo ?? 1030) + 1;
+      const last = await Order.findOne()
+        .sort({ orderNo: -1 })
+        .select({ orderNo: 1 })
+        .lean();
+      const nextOrderNo = (last?.orderNo ?? 1030) + 1;
 
-    const created = await Order.create({
-      createdByClerkUserId: getClerkUserId(req),
-      orderNo: nextOrderNo,
-      tableCode: parsed.tableCode,
-      serverName: parsed.serverName,
-      items: parsed.items,
-      subtotal,
-      status: parsed.status,
-      paymentStatus: parsed.paymentStatus,
-      paidAt: parsed.paymentStatus === "paid" ? new Date() : undefined,
-      statusUpdatedAt: new Date(),
-      paymentStatusUpdatedAt: new Date(),
-    });
+      const created = await Order.create({
+        createdByClerkUserId: getClerkUserId(req),
+        orderNo: nextOrderNo,
+        tableCode: parsed.tableCode,
+        serverName: parsed.serverName,
+        items: parsed.items,
+        subtotal,
+        status: parsed.status,
+        paymentStatus: parsed.paymentStatus,
+        paidAt: parsed.paymentStatus === "paid" ? new Date() : undefined,
+        statusUpdatedAt: new Date(),
+        paymentStatusUpdatedAt: new Date(),
+      });
 
-    await Table.updateOne(
-      { code: parsed.tableCode },
-      {
-        $set: {
-          status: parsed.paymentStatus === "paid" ? "billed" : "seated",
+      await Table.updateOne(
+        { code: parsed.tableCode },
+        {
+          $set: {
+            status: parsed.paymentStatus === "paid" ? "billed" : "seated",
+          },
         },
-      },
-    );
+      );
 
-    res.status(201).json({ order: created, checkoutUrl: null });
-  } catch (err) {
-    next(err);
-  }
-});
+      res.status(201).json({ order: created, checkoutUrl: null });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 const UpdateOrderStateSchema = z
   .object({
@@ -189,7 +203,8 @@ ordersRouter.patch(
         { new: true },
       ).lean();
 
-      if (!updated) return res.status(404).json({ error: { message: "Not found" } });
+      if (!updated)
+        return res.status(404).json({ error: { message: "Not found" } });
 
       if (parsed.paymentStatus) {
         await Table.updateOne(
@@ -217,4 +232,3 @@ ordersRouter.patch(
     }
   },
 );
-

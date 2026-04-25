@@ -131,7 +131,7 @@ export default function DashboardHome() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div
           className={`rounded-2xl border border-border bg-card p-6 shadow-card lg:col-span-2 ${
-            recentOrders.length >= 5 ? "lg:min-h-[34rem]" : "lg:min-h-[28rem]"
+            recentOrders.length >= 5 ? "lg:min-h-136" : "lg:min-h-112"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -151,34 +151,33 @@ export default function DashboardHome() {
             )}
             {!loading &&
               recentOrders.map((o) => (
-              <div
-                key={o.id}
-                className="flex items-center gap-4 py-4"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted font-display font-bold">
-                  {o.table}
-                </div>
-
-                <div className="flex-1">
-                  <div className="font-medium">{o.itemsText || "No items"}</div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />{" "}
-                    {o.time ? new Date(o.time).toLocaleTimeString() : "—"}
+                <div key={o.id} className="flex items-center gap-4 py-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted font-display font-bold">
+                    {o.table}
                   </div>
-                </div>
 
-                <div className="text-sm font-semibold">
-                  ₹{Number(o.total).toFixed(2)}
-                </div>
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {o.itemsText || "No items"}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />{" "}
+                      {o.time ? new Date(o.time).toLocaleTimeString() : "—"}
+                    </div>
+                  </div>
 
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    statusColor[o.status]
-                  }`}
-                >
-                  {o.status}
-                </span>
-              </div>
+                  <div className="text-sm font-semibold">
+                    ₹{Number(o.total).toFixed(2)}
+                  </div>
+
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      statusColor[o.status]
+                    }`}
+                  >
+                    {o.status}
+                  </span>
+                </div>
               ))}
             {!loading && recentOrders.length === 0 && (
               <div className="py-8 text-center text-sm text-muted-foreground">
@@ -212,7 +211,9 @@ export default function DashboardHome() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
-          <h2 className="font-display text-xl font-semibold">Manager checklist</h2>
+          <h2 className="font-display text-xl font-semibold">
+            Manager checklist
+          </h2>
 
           <div className="mt-3 flex gap-2">
             <Input

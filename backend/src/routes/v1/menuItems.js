@@ -23,7 +23,10 @@ menuItemsRouter.get(
       if (active.success && active.data)
         filter.isActive = active.data === "true";
 
-      const items = await MenuItem.find(filter).sort({ name: 1 }).limit(500).lean();
+      const items = await MenuItem.find(filter)
+        .sort({ name: 1 })
+        .limit(500)
+        .lean();
       res.json({ items });
     } catch (err) {
       next(err);
@@ -78,11 +81,11 @@ menuItemsRouter.patch(
         { new: true },
       ).lean();
 
-      if (!updated) return res.status(404).json({ error: { message: "Not found" } });
+      if (!updated)
+        return res.status(404).json({ error: { message: "Not found" } });
       res.json({ item: updated });
     } catch (err) {
       next(err);
     }
   },
 );
-
