@@ -36,6 +36,7 @@ export function createApp(env) {
   app.use(clerkMiddleware());
 
   app.use(healthRouter);
+  app.get("/",(req,res)=>{res.send("hello")})
   app.use("/v1", v1Router);
 
   app.use(notFound);
