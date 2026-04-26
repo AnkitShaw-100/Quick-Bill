@@ -99,7 +99,7 @@ export default function OrdersPage() {
   async function loadFormData(nextTableCode = "") {
     const token = await getToken();
     const [t, m] = await Promise.all([
-      apiFetch("/v1/tables", { token }),
+      apiFetch("/v1/tables?status=available", { token }),
       apiFetch("/v1/menu-items?active=true", { token }),
     ]);
 
@@ -499,14 +499,13 @@ export default function OrdersPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {[
-                            "New",
-                            "In kitchen",
-                            "Served",
-                            "Paid",
-                            "Cancelled",
+                            { label: "Cooking", value: "In kitchen" },
+                            { label: "Served", value: "Served" },
+                            { label: "Paid", value: "Paid" },
+                            { label: "Cancelled", value: "Cancelled" },
                           ].map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
+                            <SelectItem key={s.value} value={s.value}>
+                              {s.label}
                             </SelectItem>
                           ))}
                         </SelectContent>

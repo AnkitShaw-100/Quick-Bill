@@ -6,23 +6,29 @@ import { Table } from "../../models/Table.js";
 
 export const tablesRouter = Router();
 
+function getClerkUserId(req) {
+  const userId =
+    req?.auth && typeof req.auth.userId === "string" ? req.auth.userId : null;
+  if (!userId) throw new Error("Missing auth userId");
+  return userId;
+}
+
 tablesRouter.get(
   "/tables",
   requireAuthApi(),
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const status = z
         .enum(["available", "seated", "billed", "cleaning"])
         .optional()
         .safeParse(req.query.status);
-        console.log(status)
 
-      const filter = {};
+      const filter = { createdByClerkUserId: clerkUserId };
       if (status.success && status.data) filter.status = status.data;
-      console.log(filter)
 
-      const tables = await Table.find()
+      const tables = await Table.find(filter)
         .sort({ code: 1 })
         .limit(200)
         .lean();
@@ -55,6 +61,7 @@ tablesRouter.post(
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const parsed = UpsertTableSchema.parse(req.body);
       const update = { seats: parsed.seats };
 
@@ -67,8 +74,14 @@ tablesRouter.post(
       }
 
       const doc = await Table.findOneAndUpdate(
-        { code: parsed.code },
-        { $set: update, $setOnInsert: { code: parsed.code } },
+        { code: parsed.code, createdByClerkUserId: clerkUserId },
+        {
+          $set: update,
+          $setOnInsert: {
+            code: parsed.code,
+            createdByClerkUserId: clerkUserId,
+          },
+        },
         { upsert: true, new: true },
       ).lean();
 

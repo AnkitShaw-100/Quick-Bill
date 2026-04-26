@@ -40,10 +40,5 @@ const OrderSchema = new Schema(
   { timestamps: true },
 );
 
-OrderSchema.index(
-  { restaurantId: 1, orderNo: 1 },
-  { unique: true, sparse: true },
-);
-
 export const Order =
   mongoose.models.Order ?? mongoose.model("Order", OrderSchema);

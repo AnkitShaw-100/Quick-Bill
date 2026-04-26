@@ -70,8 +70,11 @@ dashboardRouter.get(
           createdByClerkUserId: clerkUserId,
           status: { $nin: ["Paid", "Cancelled"] },
         }),
-        Table.countDocuments(),
-        Table.countDocuments({ status: { $in: ["seated", "billed"] } }),
+        Table.countDocuments({ createdByClerkUserId: clerkUserId }),
+        Table.countDocuments({
+          createdByClerkUserId: clerkUserId,
+          status: { $in: ["seated", "billed"] },
+        }),
         Order.aggregate([
           {
             $match: {

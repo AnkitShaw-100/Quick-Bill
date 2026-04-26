@@ -6,18 +6,26 @@ import { Category } from "../../models/Category.js";
 
 export const categoriesRouter = Router();
 
+function getClerkUserId(req) {
+  const userId =
+    req?.auth && typeof req.auth.userId === "string" ? req.auth.userId : null;
+  if (!userId) throw new Error("Missing auth userId");
+  return userId;
+}
+
 categoriesRouter.get(
   "/categories",
   requireAuthApi(),
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const active = z
         .enum(["true", "false"])
         .optional()
         .safeParse(req.query.active);
 
-      const filter = {};
+      const filter = { createdByClerkUserId: clerkUserId };
       if (active.success && active.data)
         filter.isActive = active.data === "true";
 
@@ -43,8 +51,10 @@ categoriesRouter.post(
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const parsed = CreateCategorySchema.parse(req.body);
       const created = await Category.create({
+        createdByClerkUserId: clerkUserId,
         name: parsed.name.trim(),
         isActive: true,
       });

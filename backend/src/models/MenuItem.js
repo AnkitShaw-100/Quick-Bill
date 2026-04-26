@@ -3,17 +3,13 @@ import mongoose, { Schema } from "mongoose";
 const MenuItemSchema = new Schema(
   {
     restaurantId: { type: Schema.Types.ObjectId, ref: "Restaurant" },
+    createdByClerkUserId: { type: String, required: true, index: true },
     name: { type: String, required: true, index: true },
     category: { type: String, index: true },
     price: { type: Number, required: true, min: 0 },
     isActive: { type: Boolean, default: true, index: true },
   },
   { timestamps: true },
-);
-
-MenuItemSchema.index(
-  { restaurantId: 1, name: 1 },
-  { unique: true, sparse: true },
 );
 
 export const MenuItem =

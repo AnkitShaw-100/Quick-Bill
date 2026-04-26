@@ -20,6 +20,7 @@ ordersRouter.get(
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const page = Math.max(
         1,
         z.coerce
@@ -49,7 +50,7 @@ ordersRouter.get(
 
       const q = z.string().trim().optional().safeParse(req.query.q);
 
-      const filter = {};
+      const filter = { createdByClerkUserId: clerkUserId };
       if (status.success && status.data) filter.status = status.data;
 
       if (q.success && q.data) {
@@ -124,20 +125,38 @@ ordersRouter.post(
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const parsed = CreateOrderSchema.parse(req.body);
       const subtotal = parsed.items.reduce(
         (acc, it) => acc + it.qty * it.price,
         0,
       );
 
-      const last = await Order.findOne()
+      const availableTable = await Table.findOne({
+        code: parsed.tableCode,
+        createdByClerkUserId: clerkUserId,
+        status: "available",
+      })
+        .select({ _id: 1 })
+        .lean();
+
+      if (!availableTable) {
+        return res.status(409).json({
+          error: {
+            message:
+              "Table is not available. Please pick another table.",
+          },
+        });
+      }
+
+      const last = await Order.findOne({ createdByClerkUserId: clerkUserId })
         .sort({ orderNo: -1 })
         .select({ orderNo: 1 })
         .lean();
       const nextOrderNo = (last?.orderNo ?? 1030) + 1;
 
       const created = await Order.create({
-        createdByClerkUserId: getClerkUserId(req),
+        createdByClerkUserId: clerkUserId,
         orderNo: nextOrderNo,
         tableCode: parsed.tableCode,
         serverName: parsed.serverName,
@@ -151,7 +170,7 @@ ordersRouter.post(
       });
 
       await Table.updateOne(
-        { code: parsed.tableCode },
+        { code: parsed.tableCode, createdByClerkUserId: clerkUserId },
         {
           $set: {
             status: parsed.paymentStatus === "paid" ? "billed" : "seated",
@@ -183,6 +202,7 @@ ordersRouter.patch(
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const parsed = UpdateOrderStateSchema.parse(req.body);
       const update = {};
       const now = new Date();
@@ -197,8 +217,8 @@ ordersRouter.patch(
         update.paidAt = parsed.paymentStatus === "paid" ? now : undefined;
       }
 
-      const updated = await Order.findByIdAndUpdate(
-        req.params.orderId,
+      const updated = await Order.findOneAndUpdate(
+        { _id: req.params.orderId, createdByClerkUserId: clerkUserId },
         { $set: update },
         { new: true },
       ).lean();
@@ -208,7 +228,10 @@ ordersRouter.patch(
 
       if (parsed.paymentStatus) {
         await Table.updateOne(
-          { code: updated.tableCode },
+          {
+            code: updated.tableCode,
+            createdByClerkUserId: clerkUserId,
+          },
           {
             $set: {
               status: parsed.paymentStatus === "paid" ? "billed" : "seated",

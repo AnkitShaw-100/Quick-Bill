@@ -6,19 +6,27 @@ import { MenuItem } from "../../models/MenuItem.js";
 
 export const menuItemsRouter = Router();
 
+function getClerkUserId(req) {
+  const userId =
+    req?.auth && typeof req.auth.userId === "string" ? req.auth.userId : null;
+  if (!userId) throw new Error("Missing auth userId");
+  return userId;
+}
+
 menuItemsRouter.get(
   "/menu-items",
   requireAuthApi(),
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const q = z.string().trim().optional().safeParse(req.query.q);
       const active = z
         .enum(["true", "false"])
         .optional()
         .safeParse(req.query.active);
 
-      const filter = {};
+      const filter = { createdByClerkUserId: clerkUserId };
       if (q.success && q.data) filter.name = { $regex: q.data, $options: "i" };
       if (active.success && active.data)
         filter.isActive = active.data === "true";
@@ -47,8 +55,10 @@ menuItemsRouter.post(
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const parsed = CreateMenuItemSchema.parse(req.body);
       const created = await MenuItem.create({
+        createdByClerkUserId: clerkUserId,
         name: parsed.name,
         category: parsed.category,
         price: parsed.price,
@@ -74,9 +84,10 @@ menuItemsRouter.patch(
   ensureDbUser(),
   async (req, res, next) => {
     try {
+      const clerkUserId = getClerkUserId(req);
       const parsed = UpdateMenuItemSchema.parse(req.body);
-      const updated = await MenuItem.findByIdAndUpdate(
-        req.params.id,
+      const updated = await MenuItem.findOneAndUpdate(
+        { _id: req.params.id, createdByClerkUserId: clerkUserId },
         { $set: parsed },
         { new: true },
       ).lean();
